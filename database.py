@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import json
-import pykakasi
 import sqlite3
 
 from album import Album
@@ -10,8 +9,6 @@ from artist import Artist
 from artistlist import ArtistList
 from song import Song
 from songlist import SongList
-
-kks = pykakasi.kakasi()
 
 class Database(object):
 
@@ -35,13 +32,7 @@ class Database(object):
         if self.connection:
             self.connection.close()
 
-    def kakasi(self,s):
-        res = ""
-        rows = kks.convert(s)
-        for row in rows:
-            res += row["hepburn"]
-        return res
-
+    # TODO: remove
     def testdata(self, path):
         cur = self.cursor()
 
