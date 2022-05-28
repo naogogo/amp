@@ -2,6 +2,7 @@
 
 from song import Song
 
+import logging
 import pykakasi
 
 class SongList(object):
@@ -11,6 +12,7 @@ class SongList(object):
     """
 
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.songs = []
         self._kakasi = pykakasi.kakasi()
 
@@ -23,11 +25,12 @@ class SongList(object):
         return res
 
     def from_json(self, connection, data):
+        counter = 0
         cursor = connection.cursor()
-
         cursor.execute("BEGIN TRANSACTION;")
 
         for row in data:
+            counter += 1
             song = Song()
             song.from_json(cursor, row)
             try:
@@ -41,6 +44,8 @@ class SongList(object):
 
         cursor.execute("COMMIT;")
         cursor.close()
+
+        self.logger.info("Processed %d entries, added %d songs", counter, len(self.songs))
 
     def where(self, where):
         i = 0
@@ -81,3 +86,10 @@ class SongList(object):
     def songs(self, songs):
         self._songs = songs
 
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, logger):
+        self._logger = logger

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import logging
 
 from flask import Flask, request
 
@@ -60,6 +61,7 @@ def init():
     db.execute(Song.create_query)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     init()
 
     db.testdata("songs.json")

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 from artist import Artist
+from language import Language
 
-import pykakasi
+import logging
 
 class ArtistList(object):
 
@@ -11,8 +12,9 @@ class ArtistList(object):
     """
 
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.artists = []
-        self._kakasi = pykakasi.kakasi()
+        self.language = Language()
 
     # TODO: remove
     def kakasi(self,s):
@@ -23,10 +25,12 @@ class ArtistList(object):
         return res
 
     def from_json(self, connection, data):
+        counter = 0
         cursor = connection.cursor()
         cursor.execute("BEGIN TRANSACTION;")
 
         for row in data:
+            counter += 1
             artist = self.artist_from_json(row["artist"])
             if not artist in self.artists:
                 self.artists.append(artist)
@@ -40,14 +44,12 @@ class ArtistList(object):
 
         cursor.execute("COMMIT;")
         cursor.close()
+        self.logger.info("Processed %d entries, added %d artists", counter, len(self.artists))
 
     def artist_from_json(self, title):
         artist = Artist()
         artist.title = title
-        try:
-            artist.title_s = self.kakasi(title)
-        except:
-            artist.title_s = ""
+        artist.title_s = self.language.convert(title)
         return artist
 
     def where(self, where):
@@ -88,3 +90,19 @@ class ArtistList(object):
     @artists.setter
     def artists(self, artists):
         self._artists = artists
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, logger):
+        self._logger = logger
+
+    @property
+    def language(self):
+        return self._language
+
+    @language.setter
+    def language(self, language):
+        self._language = language

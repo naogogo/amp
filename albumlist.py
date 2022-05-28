@@ -2,6 +2,7 @@
 
 from album import Album
 
+import logging
 import pykakasi
 
 class AlbumList(object):
@@ -11,6 +12,7 @@ class AlbumList(object):
     """
 
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.albums = []
         self._kakasi = pykakasi.kakasi()
 
@@ -23,11 +25,12 @@ class AlbumList(object):
         return res
 
     def from_json(self, connection, data):
+        counter = 0
         cursor = connection.cursor()
-
         cursor.execute("BEGIN TRANSACTION;")
 
         for row in data:
+            counter += 1
             album = Album()
             album.from_json(cursor, row)
             try:
@@ -43,6 +46,8 @@ class AlbumList(object):
 
         cursor.execute("COMMIT;")
         cursor.close()
+
+        self.logger.info("Processed %d entries, added %d albums", counter, len(self.albums))
 
     def where(self, where):
         i = 0
@@ -84,3 +89,11 @@ class AlbumList(object):
     @albums.setter
     def albums(self, albums):
         self._albums = albums
+
+    @property
+    def logger(self):
+        return self._logger
+
+    @logger.setter
+    def logger(self, logger):
+        self._logger = logger
