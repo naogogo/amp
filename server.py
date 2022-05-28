@@ -18,6 +18,9 @@ def hello_world():
 
 @app.route("/search", methods=["POST"])
 def search():
+    d = Database()
+    d.connect()
+
     album_list = AlbumList()
     artist_list = ArtistList()
     song_list = SongList()
@@ -25,7 +28,7 @@ def search():
     query = request.form["query"]
     print("query " + query)
 
-    cur = db._con.cursor()
+    cur = d.cursor()
 
     album_list.find(cur, query)
     artist_list.find(cur, query)

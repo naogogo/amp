@@ -4,133 +4,185 @@ import pykakasi
 
 class ArtistList(object):
 
-        DB_FIND_SELECT_QUERY = """
-SELECT id FROM artists
-"""
+    DB_FIND_SELECT_QUERY = """
+        SELECT id FROM artists
+    """
 
-        def __init__(self):
-                self.artists = []
+    def __init__(self):
+        self.artists = []
 
-        def like(self, what):
-                return "%%{0}%%".format(what)
+    # TODO: remove
+    def kakasi(self,s):
+        res = ""
+        rows = kks.convert(s)
+        for row in rows:
+            res += row["hepburn"]
+        return res
 
-        def where(self, where):
-                i = 0
-                query = ""
-                ss = where.strip().split()
-                for s in ss:
-                        if i > 0:
-                                query += "AND "
-                        else:
-                                query += "WHERE "
-                        query += "(title LIKE ? OR title_s LIKE ?) "
-                        i += 1
-                return query
+    def from_json(self, connection, data):
+        cursor = connection.cursor()
+        cursor.execute("BEGIN TRANSACTION;")
 
-        def where_params(self, where):
-                params = ()
-                ss = where.strip().split()
-                for s in ss:
-                        params += (self.like(s), self.like(s))
-                return params
+        for row in data:
+            artist = self.artist_from_json(row["artist"])
+            if not artist in self.artists:
+                self.artists.append(artist)
+                artist.to_database(cursor)
 
-        def find(self, con, title):
-                artists = []
-                res = con.execute(self.DB_FIND_SELECT_QUERY + self.where(title), self.where_params(title)).fetchall()
-                for row in res:
-                        artist = Artist()
-                        artist.from_db_by_id(con, row[0])
-                        artists.append(artist)
+            if "albumartist" in row:
+                albumartist = self.artist_from_json(row["albumartist"])
+                if not albumartist in self.artists:
+                    self.artists.append(albumartist)
+                    albumartist.to_database(cursor)
 
-                self.artists = artists
+        cursor.execute("COMMIT;")
+        cursor.close()
 
-        @property
-        def artists(self):
-                return self._artists
+    def artist_from_json(self, title):
+        artist = Artist()
+        artist.title = title
+        try:
+            artist.title_s = self.kakasi(title)
+        except:
+            artist.title_s = ""
+        return artist
 
-        @artists.setter
-        def artists(self, artists):
-                self._artists = artists
+    def like(self, what):
+        return "%%{0}%%".format(what)
+
+    def where(self, where):
+        i = 0
+        query = ""
+        ss = where.strip().split()
+        for s in ss:
+            if i > 0:
+                query += "AND "
+            else:
+                query += "WHERE "
+            query += "(title LIKE ? OR title_s LIKE ?) "
+            i += 1
+        return query
+
+    def where_params(self, where):
+        params = ()
+        ss = where.strip().split()
+        for s in ss:
+            params += (self.like(s), self.like(s))
+        return params
+
+    def find(self, con, title):
+        artists = []
+        res = con.execute(self.DB_FIND_SELECT_QUERY + self.where(title), self.where_params(title)).fetchall()
+        for row in res:
+            artist = Artist()
+            artist.from_db_by_id(con, row[0])
+            artists.append(artist)
+
+        self.artists = artists
+
+    @property
+    def artists(self):
+        return self._artists
+
+    @artists.setter
+    def artists(self, artists):
+        self._artists = artists
 
 class Artist(object):
 
-        create_query = """
-CREATE TABLE IF NOT EXISTS artists (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        title           TEXT,
-        title_s         TEXT
-);
-"""
+    create_query = """
+        CREATE TABLE IF NOT EXISTS artists (
+            id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            title   TEXT,
+            title_s TEXT
+        );
+    """
 
-        DB_ID_SELECT_QUERY = """
-SELECT * FROM artists WHERE id = ?
-"""
+    insert_query = """
+        INSERT INTO artists (
+            title,
+            title_s
+        ) VALUES (
+            ?,
+            ?
+        );
+    """
 
-        DB_TITLE_SELECT_QUERY = """
-SELECT * FROM artists WHERE title = ?
-        """
+    DB_ID_SELECT_QUERY = """
+        SELECT * FROM artists WHERE id = ?
+    """
 
-        def __init__(self):
-                self.id = 0
-                self.title = None
+    DB_TITLE_SELECT_QUERY = """
+        SELECT * FROM artists WHERE title = ?
+    """
 
-        def from_db_by_id(self, con, id):
-                res = con.execute(self.DB_ID_SELECT_QUERY, (id,)).fetchall()
-                if len(res) != 1:
-                        return False
-                row = res[0]
+    def __init__(self):
+        self.id = 0
+        self.title = None
 
-                self.id = row[0]
-                self.title = row[1]
+    def from_db_by_id(self, con, id):
+        res = con.execute(self.DB_ID_SELECT_QUERY, (id,)).fetchall()
+        if len(res) != 1:
+            return False
+        row = res[0]
 
-                return True
+        self.id = row[0]
+        self.title = row[1]
 
-        def from_db_by_title(self, con, title):
-                res = con.execute(self.DB_TITLE_SELECT_QUERY, (title,)).fetchall()
-                if len(res) != 1:
-                        return False
-                row = res[0]
+        return True
 
-                self.id = row[0]
-                self.title = row[1]
+    def from_db_by_title(self, con, title):
+        res = con.execute(self.DB_TITLE_SELECT_QUERY, (title,)).fetchall()
+        if len(res) != 1:
+            return False
+        row = res[0]
 
-                return True
+        self.id = row[0]
+        self.title = row[1]
 
-        def to_dict(self):
-            return {
-                "id": self.id,
-                "title": self.title,
-            }
+        return True
 
-        @property
-        def id(self):
-                return self._id
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+        }
 
-        @id.setter
-        def id(self, id):
-                self._id = int(id)
+    def to_database(self, cursor):
+        return cursor.execute(self.insert_query, (
+            self.title,
+            self.title_s,
+        ))
 
-        @property
-        def title(self):
-                return self._title
+    @property
+    def id(self):
+        return self._id
 
-        @title.setter
-        def title(self, title):
-                self._title = title
+    @id.setter
+    def id(self, id):
+        self._id = int(id)
 
-        def __eq__(self, other):
-                if not isinstance(other, Artist):
-                        return False
+    @property
+    def title(self):
+        return self._title
 
-                if not self.title == other.title:
-                        return False
+    @title.setter
+    def title(self, title):
+        self._title = title
 
-                return True
+    def __eq__(self, other):
+        if not isinstance(other, Artist):
+            return False
 
-        @property
-        def title_s(self):
-                return self._title_s
+        if not self.title == other.title:
+            return False
 
-        @title_s.setter
-        def title_s(self, title_s):
-                self._title_s = title_s
+        return True
+
+    @property
+    def title_s(self):
+        return self._title_s
+
+    @title_s.setter
+    def title_s(self, title_s):
+        self._title_s = title_s
