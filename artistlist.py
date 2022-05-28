@@ -50,9 +50,6 @@ class ArtistList(object):
             artist.title_s = ""
         return artist
 
-    def like(self, what):
-        return "%%{0}%%".format(what)
-
     def where(self, where):
         i = 0
         query = ""
@@ -70,7 +67,8 @@ class ArtistList(object):
         params = ()
         ss = where.strip().split()
         for s in ss:
-            params += (self.like(s), self.like(s))
+            w = "%%{0}%%".format(s)
+            params += (w, w)
         return params
 
     def find(self, con, title):
