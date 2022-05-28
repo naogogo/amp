@@ -19,16 +19,12 @@ class Database(object):
 
     def connect(self):
         self._con = sqlite3.connect(self.path, check_same_thread=False)
-        self.create()
 
-    def create(self):
-        cur = self._con.cursor()
-        cur.execute("BEGIN TRANSACTION;")
-        cur.execute(Artist.create_query)
-        cur.execute(Album.create_query)
-        cur.execute(Song.create_query)
-        cur.execute("COMMIT;")
-        cur.close()
+    def execute(self, query, params=()):
+        cursor = self.cursor()
+        result = cursor.execute(query, params).fetchall()
+        cursor.close()
+        return result
 
     def cursor(self):
         return self._con.cursor()
@@ -200,3 +196,11 @@ class Database(object):
     @path.setter
     def path(self, path):
         self._path = path
+
+    @property
+    def connection(self):
+        return self._connection
+
+    @connection.setter
+    def connection(self, connection):
+        self._connection = connection

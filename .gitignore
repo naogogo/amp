@@ -1,1 +1,4 @@
 __pycache__
+
+# Ignore test data
+songs.json

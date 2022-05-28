@@ -50,8 +50,15 @@ def search():
 
     return json.dumps(data)
 
-if __name__ == "__main__":
+def init():
     db.connect()
+    db.execute(Artist.create_query)
+    db.execute(Album.create_query)
+    db.execute(Song.create_query)
+
+if __name__ == "__main__":
+    init()
+
     db.testdata("songs.json")
 
     app.run()
