@@ -4,9 +4,12 @@ import json
 import pykakasi
 import sqlite3
 
-from album import Album, AlbumList
-from artist import Artist, ArtistList
-from song import Song, SongList
+from album import Album
+from albumlist import AlbumList
+from artist import Artist
+from artistlist import ArtistList
+from song import Song
+from songlist import SongList
 
 kks = pykakasi.kakasi()
 
