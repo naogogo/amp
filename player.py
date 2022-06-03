@@ -14,6 +14,50 @@ class Player(object):
         self.client = mpd.MPDClient()
         self.timeout = 3
 
+    def begin(self):
+        try:
+            self.client.command_list_ok_begin()
+        except ConnectionError:
+            self.connect()
+            self.client.command_list_ok_begin()
+
+    def end(self):
+        self.client.command_list_end()
+
+    def play_artist(self, cursor, artist):
+        self.begin()
+        self.client.stop()
+        self.client.clear()
+
+        self.client.add(artist.path)
+        self.client.play(0)
+
+        self.end()
+
+    def play_album(self, album):
+        self.begin()
+        self.client.stop()
+        self.client.clear()
+
+        self.client.add(album.path)
+        self.client.play(0)
+
+        self.end()
+
+
+    def play_song(self, cursor, song):
+        album = Album()
+        album.from_db_by_id(song.album.id)
+
+        self.begin()
+        self.client.stop()
+        self.client.clear()
+
+        self.client.add(album.path)
+        self.client.play(song.track - 1)
+
+        self.end()
+
     def connect(self):
         self.client.connect(self.host, self.port)
 
@@ -24,12 +68,8 @@ class Player(object):
             a.from_db_by_id(cursor, album)
             albumlist.append(a)
 
-        try:
-            self.client.command_list_ok_begin()
-        except ConnectionError:
-            self.connect()
-            self.client.command_list_ok_begin()
-
+        self.command_list_ok_begin()
+        self.client.stop()
         self.client.clear()
         for a in albumlist:
             self.client.add(a.path)

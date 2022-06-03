@@ -32,13 +32,7 @@ class Database(object):
         if self.connection:
             self.connection.close()
 
-    # TODO: remove
-    def testdata(self, path):
-        cur = self.cursor()
-
-        with open(path, "r") as f:
-            data = json.load(f)
-
+    def insert_json(self, data):
         albums = []
         artists = []
         songs = []

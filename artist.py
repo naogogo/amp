@@ -31,6 +31,7 @@ class Artist(object):
     def __init__(self):
         self.id = 0
         self.title = None
+        self.path = None
 
     def from_db_by_id(self, con, id):
         res = con.execute(self.DB_ID_SELECT_QUERY, (id,)).fetchall()
@@ -65,6 +66,14 @@ class Artist(object):
             self.title,
             self.title_s,
         ))
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, path):
+        self._path = path
 
     @property
     def id(self):

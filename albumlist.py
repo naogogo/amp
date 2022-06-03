@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 from album import Album
+from language import Language
 
 import logging
-import pykakasi
 
 class AlbumList(object):
 
@@ -14,15 +14,7 @@ class AlbumList(object):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.albums = []
-        self._kakasi = pykakasi.kakasi()
-
-    # TODO: remove
-    def kakasi(self,s):
-        res = ""
-        rows = self._kakasi.convert(s)
-        for row in rows:
-            res += row["hepburn"]
-        return res
+        self.language = Language()
 
     def from_json(self, connection, data):
         counter = 0
@@ -34,7 +26,7 @@ class AlbumList(object):
             album = Album()
             album.from_json(cursor, row)
             try:
-                album.title_s = self.kakasi(row["album"])
+                album.title_s = self.language.convert(row["album"])
             except:
                 album.title_s = ""
 
@@ -97,3 +89,11 @@ class AlbumList(object):
     @logger.setter
     def logger(self, logger):
         self._logger = logger
+
+    @property
+    def language(self):
+        return self._language
+
+    @language.setter
+    def language(self, language):
+        self._language = language

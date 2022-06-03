@@ -16,14 +16,6 @@ class ArtistList(object):
         self.artists = []
         self.language = Language()
 
-    # TODO: remove
-    def kakasi(self,s):
-        res = ""
-        rows = self._kakasi.convert(s)
-        for row in rows:
-            res += row["hepburn"]
-        return res
-
     def from_json(self, connection, data):
         counter = 0
         cursor = connection.cursor()
